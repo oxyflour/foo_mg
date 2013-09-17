@@ -59,9 +59,9 @@ void c_initquit::on_init() {
 
 	// Override the default document directory
 	int j;
-	for (j = 0; j < MAX_OPTIONS - 3
-		&& options[j] != NULL
-		&& strcmp(options[j], "document_root"); ) j++;
+	for (j = 0; j < MAX_OPTIONS - 3 &&
+		options[j] != NULL &&
+		strcmp(options[j], "document_root"); ) j++;
 	if (j < MAX_OPTIONS - 3 && options[j] == NULL) {
 		options[j] = strdup("document_root");
 		options[j+1] = strdup("www");

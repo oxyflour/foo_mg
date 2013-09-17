@@ -84,7 +84,8 @@
       <IgnoreSpecificDefaultLibraries>LIBCMT;LIBCMTD;MSVCRTD</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "D:\ftp\foobar2000\components\"</Command>
+      <Command>rem copy "$(TargetPath)" "D:\ftp\foobar2000\components\"
+copy "$(TargetPath)" "$(ProjectDir)latest_build\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
