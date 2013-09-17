@@ -7,9 +7,9 @@
 如果没有配置文件，那默认端口就是8080，默认主目录是foobar2000目录下的www文件夹
 
 ###媒体数据库同步（通过database.h）
-这个插件会尝试自动将foobar2000的媒体库导出到foobar2000目录下的mgdatabase.dat文件。这个文件实际上是一个sqlite3数据库，你可以使用任何你喜欢的工具查看或修改。当然，你也可以使用在mongoose中运行的php脚本或其他cgi程序来访问这个数据库
+这个插件会尝试自动将foobar2000的媒体库导出到foobar2000目录下的mgdatabase.dat文件。这个文件实际上是一个sqlite3数据库，你可以使用任何你喜欢的工具查看、修改或者添加额外的信息。当然，你也可以使用在mongoose中运行的php脚本或其他cgi程序来访问这个数据库
 
-第一次安装后启动foobar2000时，如果你的媒体库中有大量项目，可能需要一些时间把数据同步到mgdatabase.dat中（在我不是很快的硬盘上，导出10k+的项目需要十几秒）。之后如果仅仅只是零星添加一些项目，使用过程中不会感觉到异常
+第一次安装后启动foobar2000时，可能需要一些时间把媒体库中的项目同步到mgdatabase.dat中（在我不是很快的硬盘上，导出10k+的项目需要十几秒）。之后如果仅仅只是零星添加一些项目，使用过程中不会感觉到异常
 
 ###lua接口支持（参考luacmd.h）
 在服务器中运行的lua脚本（请注意是.lua文件，而不是mongoose自身支持的.lp文件）支持一系列的接口，提供以下功能：
@@ -20,5 +20,15 @@
 
 
 ##如何安装
-这个简陋的插件暂时没有提供安装包的计划，请直接将 [foo_mg.dll](https://github.com/oxyflour/foo_mg/blob/master/latest_build/foo_mg.dll?raw=true) 复制到foobar2000目录\components文件夹下
+这个简陋的插件暂时没有提供安装包的计划，请直接将 [foo\_mg.dll](https://github.com/oxyflour/foo_mg/blob/master/latest_build/foo_mg.dll?raw=true) 复制到foobar2000目录\components文件夹下
 
+
+###这个项目使用了以下项目提供的源代码
+mongoose 3.7
+lua 5.2.1
+lua-cjson 2.1.0
+lame
+
+
+###许可证
+可以不要吗？
