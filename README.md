@@ -1,5 +1,7 @@
 ﻿这是一个foobar2000的插件，因此你可能先需要一份foobar2000（[http://www.foobar2000.org/download](http://www.foobar2000.org/download)）
 
+你可能同时对这个项目感兴趣（[foo\_mg\_www](https://github.com/oxyflour/foo_mg_www)）
+
 ##主要功能
 ###mongoose服务器集成
 这个插件集成了一个mongoose的轻量级http服务器，你可以在foobar2000目录下创建一个mongoose.conf的文件来配置这个服务器的主目录、端口、cgi路径等信息（具体设定请参考 [这里](https://github.com/cesanta/mongoose/blob/master/docs/UserManual.md)）
@@ -23,7 +25,7 @@
 这个简陋的插件暂时没有提供安装包的计划，请直接将 [foo\_mg.dll](https://github.com/oxyflour/foo_mg/blob/master/latest_build/foo_mg.dll?raw=true) 复制到foobar2000目录\components文件夹下
 
 
-###这个项目使用了以下项目提供的源代码
+###这个项目的编译需要以下项目提供的库
 * mongoose 4.1
 * lua-cjson 2.1.0
 * lame
