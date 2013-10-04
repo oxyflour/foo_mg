@@ -155,7 +155,7 @@ static int send_data_range(mg_connection *conn, int &current, char *buf, t_size 
 	if (current + (int)size > begin) {
 		if (current < begin) {
 			offset = begin - current;
-			tosend = size - begin;
+			tosend = current + size - begin;
 		}
 		else {
 			sended = current - begin;
