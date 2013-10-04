@@ -24,8 +24,7 @@
 
 
 ###这个项目使用了以下项目提供的源代码
-* mongoose 3.7
-* lua 5.2.1
+* mongoose 4.1
 * lua-cjson 2.1.0
 * lame
 

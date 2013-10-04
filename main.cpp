@@ -80,8 +80,8 @@ void c_initquit::on_init() {
 		FOO_LOG << "server start failed";
 	}
 	else {
-		FOO_LOG << "server started at port " << mg_get_option(ctx, "p") <<
-			", document directory: " << mg_get_option(ctx, "r");
+		FOO_LOG << "server started at port " << mg_get_option(ctx, "listening_ports") <<
+			", document directory: " << mg_get_option(ctx, "document_root");
 	}
 
 	// Release memory allocated when loading config file

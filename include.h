@@ -6,12 +6,11 @@
 
 #include "../../lame-3.99.5/include/lame.h"
 
-#include "../../mongoose/mongoose.h"
-#include "../../mongoose/build/sqlite3.h"
+#include "../../mongoose-4.1/mongoose.h"
+#include "../../mongoose-4.1/build/sqlite3.h"
 
 extern "C" {
-#include "../../lua-5.2.1/src/lua.h"
-#include "../../lua-5.2.1/src/lauxlib.h"
+#include "../../mongoose-4.1/build/lua_5.2.1.h"
 LUALIB_API void (luaL_openlibs) (lua_State *L);
 LUALIB_API int luaopen_lsqlite3(lua_State *L);
 LUALIB_API int luaopen_cjson(lua_State *l);
