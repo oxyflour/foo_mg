@@ -32,7 +32,7 @@ static const struct luaL_Reg fb_ctrl[] = {
 	{NULL, NULL}
 };
 
-static int get_albumart(mg_connection *conn, const char *fpath) {
+static int get_albumart(mg_connection *conn, const char *fsave, const char *fpath) {
 	mg_request_info *ri = mg_get_request_info(conn);
 	abort_callback_dummy cb;
 	album_art_manager_instance_ptr ami = static_api_ptr_t<album_art_manager>()->instantiate();
@@ -41,7 +41,7 @@ static int get_albumart(mg_connection *conn, const char *fpath) {
 			album_art_data_ptr data = ami->query(album_art_ids::cover_front, cb);
 			t_size size = data->get_size();
 			const void *pdata = data->get_ptr();
-			if (conn != NULL && size > 0) {
+			if (size > 0) {
 				pfc::string8 head = pfc::string_formatter() <<
 					"HTTP/1.0 200 OK\r\n"
 					"Date: " << get_gmt_date(time(NULL)) << "\r\n"
@@ -49,8 +49,17 @@ static int get_albumart(mg_connection *conn, const char *fpath) {
 					"Content-type: image/" << guess_img_type(pdata) << "\r\n"
 					"Content-length: " << size << "\r\n"
 					"\r\n";
-				mg_write(conn, head.get_ptr(), head.get_length());
-				mg_write(conn, pdata, size);
+				if (fsave != NULL) {
+					DWORD writebytes;
+					HANDLE hFile = uCreateFile(fsave, GENERIC_WRITE, 0, NULL,
+						CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+					WriteFile(hFile, pdata, size, &writebytes, NULL);
+					CloseHandle(hFile);
+				}
+				else if (conn != NULL) {
+					mg_write(conn, head.get_ptr(), head.get_length());
+					mg_write(conn, pdata, size);
+				}
 			}
 			return size;
 		}
@@ -64,16 +73,18 @@ static int get_albumart(mg_connection *conn, const char *fpath) {
 	return -1;
 }
 
-static int lsp_albumart_length(lua_State *L) {
-	const char *fpath = luaL_checkstring(L, 1);
-	lua_pushinteger(L, get_albumart(NULL, fpath));
-	return 1;
-}
-
 static int lsp_stream_albumart(lua_State *L) {
 	const char *fpath = luaL_checkstring(L, 1);
 	struct mg_connection *conn = (mg_connection *)lua_touserdata(L, lua_upvalueindex(1));
-	lua_pushinteger(L, get_albumart(conn, fpath));
+	lua_pushinteger(L, get_albumart(conn, NULL, fpath));
+	return 1;
+}
+
+static int lsp_extract_albumart(lua_State *L) {
+	const char *fpath = luaL_checkstring(L, 1);
+	const char *fsave = luaL_checkstring(L, 2);
+	struct mg_connection *conn = (mg_connection *)lua_touserdata(L, lua_upvalueindex(1));
+	lua_pushinteger(L, get_albumart(conn, fsave, fpath));
 	return 1;
 }
 
@@ -328,8 +339,8 @@ static int lsp_stream_pcm(lua_State *L) {
 }
 
 static const struct luaL_Reg fb_stream[] = {
-//	{"albumart_length", lsp_albumart_length},
 	{"stream_albumart", lsp_stream_albumart},
+	{"extract_albumart", lsp_extract_albumart},
 	{"stream_file", lsp_stream_file},
 	{"stream_wav", lsp_stream_wav},
 	{"stream_mp3", lsp_stream_mp3},
@@ -350,6 +361,20 @@ static int lsp_log(lua_State *L) {
 	}
 	FOO_LOG << msg;
 	return 0;
+}
+
+static int lsp_random(lua_State *L) {
+	srand(GetTickCount());
+	lua_pushinteger(L, rand());
+	return 1;
+}
+
+static int lsp_md5(lua_State *L) {
+	char buf[33];
+	const char *src = luaL_checkstring(L, 1);
+	mg_md5(buf, src, NULL);
+	lua_pushlstring(L, buf, sizeof(buf));
+	return 1;
 }
 
 static int lsp_list_dir(lua_State *L) {
@@ -383,6 +408,13 @@ static int lsp_file_exists(lua_State *L) {
 	return 1;
 }
 
+static int lsp_move_file(lua_State *L) {
+	const char *fsrc = luaL_checkstring(L, 1);
+	const char *fdst = luaL_checkstring(L, 2);
+	lua_pushboolean(L, uMoveFile(fsrc, fdst));
+	return 1;
+}
+
 static int lsp_path_canonical(lua_State *L) {
 	const char *fpath = luaL_checkstring(L, 1);
 	WCHAR wbuf[1024], obuf[MAX_PATH]; char cbuf[1024];
@@ -405,6 +437,12 @@ static int lsp_url_encode(lua_State *L) {
 	return 1;
 }
 
+static int lsp_is_utf8(lua_State *L) {
+	const char *str = luaL_checkstring(L, 1);
+	lua_pushboolean(L, pfc::is_valid_utf8(str));
+	return 1;
+}
+
 static int lsp_utf8_len(lua_State *L) {
 	const char *str = luaL_checkstring(L, 1);
 	t_size size = pfc::strlen_utf8(str);
@@ -412,11 +450,13 @@ static int lsp_utf8_len(lua_State *L) {
 	return 1;
 }
 
-static int lsp_utf8_to_ansi(lua_State *L) {
+static int lsp_string_encode(lua_State *L) {
 	const char *str = luaL_checkstring(L, 1);
+	int from = luaL_checkinteger(L, 2);
+	int to = luaL_checkinteger(L, 3);
 	WCHAR wbuf[1024]; char cbuf[1024];
-	int wsz = MultiByteToWideChar(CP_UTF8, 0, str, -1, wbuf, sizeof(wbuf));
-	int csz = WideCharToMultiByte(CP_ACP, 0, wbuf, wsz, cbuf, sizeof(cbuf), NULL, false);
+	int wsz = MultiByteToWideChar(from, 0, str, -1, wbuf, sizeof(wbuf));
+	int csz = WideCharToMultiByte(to, 0, wbuf, wsz, cbuf, sizeof(cbuf), NULL, false);
 	if (csz > 0) {
 		lua_pushlstring(L, cbuf, csz);
 		return 1;
@@ -426,11 +466,15 @@ static int lsp_utf8_to_ansi(lua_State *L) {
 
 static const struct luaL_Reg fb_util[] = {
 	{"log", lsp_log},
+	{"random", lsp_random},
+	{"md5", lsp_md5},
 	{"list_dir", lsp_list_dir},
 	{"file_exists", lsp_file_exists},
+	{"move_file", lsp_move_file},
 	{"path_canonical", lsp_path_canonical},
 	{"url_encode", lsp_url_encode},
+	{"is_utf8", lsp_is_utf8},
 	{"utf8_len", lsp_utf8_len},
-	{"utf8_to_ansi", lsp_utf8_to_ansi},
+	{"string_encode", lsp_string_encode},
 	{NULL, NULL}
 };

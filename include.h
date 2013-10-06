@@ -37,7 +37,7 @@ enum ITEMS_ACTION {
 	ACTION_MODIFY
 };
 
-int  log_message_handle(const struct mg_connection *, const char *message) {
+int log_message_handle(const struct mg_connection *, const char *message) {
 	FOO_LOG << "mongoose: " << message;
 	return 0;
 }
