@@ -363,6 +363,31 @@ static int lsp_log(lua_State *L) {
 	return 0;
 }
 
+static int lsp_exec(lua_State *L) {
+	WCHAR wcmd[1024], wpara[1024];
+	const char *cmd = luaL_checkstring(L, 1);
+	int scmd = MultiByteToWideChar(CP_UTF8, 0, cmd, -1, wcmd, sizeof(wcmd));
+	const char *para = luaL_checkstring(L, 2);
+	int spara = MultiByteToWideChar(CP_UTF8, 0, para, -1, wpara, sizeof(wpara));
+
+	SHELLEXECUTEINFO si = {0};
+	si.cbSize = sizeof(SHELLEXECUTEINFO);
+	si.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_NO_UI;
+	si.hwnd = NULL;
+	si.lpVerb = NULL;
+	si.lpFile = wcmd;
+	si.lpParameters = wpara;
+	si.nShow = SW_HIDE;
+	si.hInstApp = NULL;
+	ShellExecuteEx(&si);
+	WaitForSingleObject(si.hProcess, INFINITE);
+
+	DWORD dwExit = 0;
+	GetExitCodeProcess(si.hProcess, &dwExit);
+	lua_pushinteger(L, dwExit);
+	return 1;
+}
+
 static int lsp_random(lua_State *L) {
 	srand(GetTickCount());
 	lua_pushinteger(L, rand());
@@ -466,6 +491,7 @@ static int lsp_string_encode(lua_State *L) {
 
 static const struct luaL_Reg fb_util[] = {
 	{"log", lsp_log},
+	{"exec", lsp_exec},
 	{"random", lsp_random},
 	{"md5", lsp_md5},
 	{"list_dir", lsp_list_dir},
