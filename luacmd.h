@@ -395,10 +395,10 @@ static int lsp_random(lua_State *L) {
 }
 
 static int lsp_md5(lua_State *L) {
-	char buf[33];
+	char buf[34] = {0};
 	const char *src = luaL_checkstring(L, 1);
 	mg_md5(buf, src, NULL);
-	lua_pushlstring(L, buf, sizeof(buf));
+	lua_pushstring(L, buf);
 	return 1;
 }
 
@@ -424,6 +424,22 @@ static int lsp_list_dir(lua_State *L) {
 		lua_rawset(L, -3);
 		i ++;
 	} while(find->FindNext());
+	return 1;
+}
+
+static int lsp_file_stat(lua_State *L) {
+	const char *fpath = luaL_checkstring(L, 1);
+	pfc::ptrholder_t<uFindFile> find = uFindFirstFile(fpath);
+	if (find.is_empty()) {
+		return 0;
+	}
+	lua_newtable(L);
+	reg_int(L, "attr", find->GetAttributes());
+	reg_int(L, "size", (int)find->GetFileSize());
+	reg_int(L, "created", (int)find->GetCreationTime().dwHighDateTime);
+	reg_int(L, "accessed", (int)find->GetLastAccessTime().dwHighDateTime);
+	reg_int(L, "modified", (int)find->GetLastWriteTime().dwHighDateTime);
+	reg_int(L, "is_dir", find->IsDirectory());
 	return 1;
 }
 
@@ -495,6 +511,7 @@ static const struct luaL_Reg fb_util[] = {
 	{"random", lsp_random},
 	{"md5", lsp_md5},
 	{"list_dir", lsp_list_dir},
+	{"file_stat", lsp_file_stat},
 	{"file_exists", lsp_file_exists},
 	{"move_file", lsp_move_file},
 	{"path_canonical", lsp_path_canonical},

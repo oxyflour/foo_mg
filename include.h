@@ -205,3 +205,6 @@ public:
 	};
 };
 static database_handle g_db(DB_FILE_NAME);
+
+// forward declaration
+static void reg_int(struct lua_State *L, const char *name, int val);
