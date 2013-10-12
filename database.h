@@ -84,10 +84,14 @@ void on_items_callback(database_handle *db, const pfc::list_base_const_t<metadb_
 	tfc->compile_force(sqlfmt, tpl);
 
 	// Do update
+	DWORD tick = GetTickCount();
 	pfc::string8_fastalloc sql;
 	titleformat_sql_char_filter flt = titleformat_sql_char_filter();
 	static_api_ptr_t<library_manager> lib;
 	t_size len = list->get_count(), size = 0;
+
+	// use transaction to speed up
+	db->exec("begin transaction;", NULL, NULL, &err);
 	for (t_size i = 0; i < len; i ++) {
 		metadb_handle_ptr item = list->get_item(i);
 		titleformat_relative_path_hook hook =
@@ -100,18 +104,18 @@ void on_items_callback(database_handle *db, const pfc::list_base_const_t<metadb_
 			sqlite3_free(err);
 		}
 	}
+	db->exec("commit transaction;", NULL, NULL, &err);
 
-	FOO_LOG << cmd << " " << list->get_count() << " items done";
+	FOO_LOG << cmd << " " << list->get_count() << " items done (in " <<
+		pfc::format_float((GetTickCount() - tick)/1000.0f, 0, 3) << "s)";
 }
 
 void init_database() {
 	int ret;
 	char *err;
 
-	// use a database in memory to speedup
-	database_handle db_mem(":memory:");
 	// foobar2000 trigger item add event when it startup
-	ret = db_mem.exec("CREATE TABLE	`"DB_PATH_TABLE"` ("
+	ret = g_db.exec("CREATE TABLE	`"DB_PATH_TABLE"` ("
 			"id INTEGER PRIMARY KEY, "
 			"directory_path VARCHAR(512) UNIQUE, "
 			"relative_path VARCHAR(512), "
@@ -147,11 +151,5 @@ void init_database() {
 	pfc::list_t<metadb_handle_ptr> list;
 	lib->get_all_items(list);
 	// Add all items
-	on_items_callback(&db_mem, &list, ACTION_ADD);
-
-	// dump from memory to disk
-	ret = db_mem.dump(&g_db);
-	if (ret != SQLITE_OK) {
-		FOO_LOG << "dump database failed! (err" << ret << ")";
-	}
+	on_items_callback(&g_db, &list, ACTION_ADD);
 }
