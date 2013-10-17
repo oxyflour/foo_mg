@@ -80,8 +80,13 @@ struct WAVE_FORMAT_HEADER {
 
 class c_initquit : public initquit {
 public:
+	// used in process storage
+	lua_State *lua;
+	CRITICAL_SECTION cs;
+
 	struct mg_context *ctx;
 	bool started;
+
 	void on_init();
 	void on_quit();
 };

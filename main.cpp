@@ -74,6 +74,8 @@ void c_initquit::on_init() {
 //	callbacks.init_lua = init_lua_handle;
 	callbacks.log_message = log_message_handle;
 
+	lua = luaL_newstate();
+	InitializeCriticalSectionAndSpinCount(&cs, 0x100);
 	// Start the web server
 	ctx = mg_start(&callbacks, NULL, (const char **)options);
 	if (ctx == NULL) {
@@ -92,6 +94,7 @@ void c_initquit::on_init() {
 	if (g_db.exec("SELECT * from `"DB_TRACK_TABLE"` LIMIT 0,1", 0, NULL, NULL) != SQLITE_OK) {
 		init_database();
 	}
+
 	started = true;
 }
 
@@ -100,6 +103,12 @@ void c_initquit::on_quit() {
 	if (ctx != NULL) {
 		mg_stop(ctx);
 	}
+
+	if (lua != NULL) {
+		lua_close(lua);
+	}
+
+	DeleteCriticalSection(&cs);
 
 	started = false;
 }

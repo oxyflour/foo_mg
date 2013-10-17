@@ -388,6 +388,36 @@ static int lsp_exec(lua_State *L) {
 	return 1;
 }
 
+static int lsp_store(lua_State *L) {
+	const char *key = luaL_checkstring(L, 1);
+	c_initquit *iq = &(g_init.get_static_instance());
+	lua_State *lua = iq->lua;
+	CRITICAL_SECTION *cs = &(iq->cs);
+	if (lua != NULL) {
+		if (lua_gettop(L) >= 2) {
+			const char *val = luaL_checkstring(L, 2);
+			EnterCriticalSection(cs);
+			lua_pushstring(lua, val);
+			lua_setglobal(lua, key);
+			LeaveCriticalSection(cs);
+		}
+		else {
+			const char *val = NULL;
+			EnterCriticalSection(cs);
+			lua_getglobal(lua, key);
+			if (lua_isstring(lua, -1) &&
+					(val = lua_tostring(lua, -1))) {
+				lua_pushstring(L, val);
+			}
+			lua_pop(lua, 1);
+			LeaveCriticalSection(cs);
+			if (val != NULL)
+				return 1;
+		}
+	}
+	return 0;
+}
+
 static int lsp_random(lua_State *L) {
 	srand(GetTickCount());
 	lua_pushinteger(L, rand());
@@ -508,6 +538,7 @@ static int lsp_string_encode(lua_State *L) {
 static const struct luaL_Reg fb_util[] = {
 	{"log", lsp_log},
 	{"exec", lsp_exec},
+	{"store", lsp_store},
 	{"random", lsp_random},
 	{"md5", lsp_md5},
 	{"list_dir", lsp_list_dir},
