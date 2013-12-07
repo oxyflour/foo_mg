@@ -37,6 +37,11 @@ enum ITEMS_ACTION {
 	ACTION_MODIFY
 };
 
+__int64 FileTimeToSeconds(FILETIME ft) {
+	ULARGE_INTEGER ift = {ft.dwLowDateTime, ft.dwHighDateTime};
+	return ift.QuadPart/10000000 - 11644473600LL;
+}
+
 int log_message_handle(const struct mg_connection *, const char *message) {
 	FOO_LOG << "mongoose: " << message;
 	return 0;
@@ -212,4 +217,4 @@ public:
 static database_handle g_db(DB_FILE_NAME);
 
 // forward declaration
-static void reg_int(struct lua_State *L, const char *name, int val);
+static void reg_int(struct lua_State *L, const char *name, lua_Integer val);

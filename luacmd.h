@@ -466,9 +466,9 @@ static int lsp_file_stat(lua_State *L) {
 	lua_newtable(L);
 	reg_int(L, "attr", find->GetAttributes());
 	reg_int(L, "size", (int)find->GetFileSize());
-	reg_int(L, "created", (int)find->GetCreationTime().dwHighDateTime);
-	reg_int(L, "accessed", (int)find->GetLastAccessTime().dwHighDateTime);
-	reg_int(L, "modified", (int)find->GetLastWriteTime().dwHighDateTime);
+	reg_int(L, "created", (lua_Integer)FileTimeToSeconds(find->GetCreationTime()));
+	reg_int(L, "accessed", (lua_Integer)FileTimeToSeconds(find->GetLastAccessTime()));
+	reg_int(L, "modified", (lua_Integer)FileTimeToSeconds(find->GetLastWriteTime()));
 	reg_int(L, "is_dir", find->IsDirectory());
 	return 1;
 }

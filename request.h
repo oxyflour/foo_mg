@@ -4,7 +4,7 @@ static void reg_string(struct lua_State *L, const char *name, const char *val) {
 	lua_rawset(L, -3);
 }
 
-static void reg_int(struct lua_State *L, const char *name, int val) {
+static void reg_int(struct lua_State *L, const char *name, lua_Integer val) {
 	lua_pushstring(L, name);
 	lua_pushinteger(L, val);
 	lua_rawset(L, -3);

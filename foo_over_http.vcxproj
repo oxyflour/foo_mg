@@ -62,7 +62,7 @@
       <IgnoreSpecificDefaultLibraries>LIBCMT;LIBCMTD</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "D:\ftp\foobar2000\components\"</Command>
+      <Command>copy "$(TargetPath)" "G:\Share\foobar2000\components\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -84,7 +84,7 @@
       <IgnoreSpecificDefaultLibraries>LIBCMT;LIBCMTD;MSVCRTD</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "D:\ftp\foobar2000\components\"
+      <Command>copy "$(TargetPath)" "G:\Share\foobar2000\components\"
 copy "$(TargetPath)" "$(ProjectDir)latest_build\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
