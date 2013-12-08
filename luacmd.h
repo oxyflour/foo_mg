@@ -525,13 +525,34 @@ static int lsp_string_encode(lua_State *L) {
 	const char *str = luaL_checkstring(L, 1);
 	int from = luaL_checkinteger(L, 2);
 	int to = luaL_checkinteger(L, 3);
-	WCHAR wbuf[1024]; char cbuf[1024];
-	int wsz = MultiByteToWideChar(from, 0, str, -1, wbuf, sizeof(wbuf));
-	int csz = WideCharToMultiByte(to, 0, wbuf, wsz, cbuf, sizeof(cbuf), NULL, false);
-	if (csz > 0) {
-		lua_pushlstring(L, cbuf, csz);
-		return 1;
+
+	WCHAR wbuf_fix[1024*8];
+	WCHAR *wbuf_alloc = NULL;
+	WCHAR *wbuf = wbuf_fix;
+	char cbuf_fix[1024*8];
+	char *cbuf_alloc = NULL;
+	char *cbuf = cbuf_fix;
+
+	int wsz = MultiByteToWideChar(from, 0, str, -1, NULL, 0);
+	if (wsz > sizeof(wbuf_fix)/sizeof(WCHAR) &&
+			(wbuf_alloc = (WCHAR *)malloc(sizeof(WCHAR) * wsz))) {
+		wbuf = wbuf_alloc;
 	}
+	if (wsz > 0) {
+		MultiByteToWideChar(from, 0, str, -1, wbuf, wsz);
+		int csz = WideCharToMultiByte(to, 0, wbuf, wsz, NULL, 0, NULL, false);
+		if (csz > sizeof(cbuf_fix) &&
+				(cbuf_alloc = (char *)malloc(csz))) {
+			cbuf = cbuf_alloc;
+		}
+		if (csz > 0) {
+			WideCharToMultiByte(to, 0, wbuf, wsz, cbuf, csz, NULL, false);
+			lua_pushlstring(L, cbuf, csz);
+			return 1;
+		}
+	}
+	if (wbuf_alloc > 0) free(wbuf_alloc);
+	if (cbuf_alloc > 0) free(cbuf_alloc);
 	return 0;
 }
 
