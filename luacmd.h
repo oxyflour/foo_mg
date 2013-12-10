@@ -547,7 +547,7 @@ static int lsp_string_encode(lua_State *L) {
 		}
 		if (csz > 0) {
 			WideCharToMultiByte(to, 0, wbuf, wsz, cbuf, csz, NULL, false);
-			lua_pushlstring(L, cbuf, csz);
+			lua_pushlstring(L, cbuf, csz-1);
 			return 1;
 		}
 	}
