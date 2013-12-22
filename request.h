@@ -118,15 +118,27 @@ static void init_lua_handle(struct mg_connection *conn, void *lua_context) {
 static int begin_request_handler(struct mg_connection *conn) {
 	const struct mg_request_info *ri = mg_get_request_info(conn);
 	const char *doc_root = mg_get_option(g_init.get_static_instance().ctx, "document_root");
-	pfc::string path = pfc::string8(doc_root) << ri->uri;
 	lua_State *L = NULL;
 
+	pfc::string8 script;
+	pfc::string path = pfc::string8(doc_root) << ri->uri;
+	t_size pb = path.indexOf(".lua");
+	if (pb != ~0) {
+		path = path.replace("/", "\\");
+		t_size pe = pb + 4;
+		t_size len = path.length();
+		if (pe == len)
+			script = path.get_ptr();
+		else if (pe < len && path[pe] == '\\')
+			script = path.subString(0, pe).get_ptr();
+	}
+
 	// load and exec lua script
-	if (path.endsWith(".lua") &&
-		uFileExists(path.get_ptr()) &&
+	if (!script.is_empty() &&
+		uFileExists(script) &&
 		(L = luaL_newstate()) != NULL) {
 		init_lua_handle(conn, L);
-		if (luaL_loadfile(L, path.get_ptr()) != LUA_OK ||
+		if (luaL_loadfile(L, pfc::stringcvt::string_ansi_from_utf8(script)) != LUA_OK ||
 			lua_pcall(L, 0, LUA_MULTRET, 0) != LUA_OK) {
 			FOO_LOG << "lua: " << lua_tostring(L, -1);
 		}
