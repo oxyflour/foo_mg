@@ -479,13 +479,6 @@ static int lsp_file_exists(lua_State *L) {
 	return 1;
 }
 
-static int lsp_move_file(lua_State *L) {
-	const char *fsrc = luaL_checkstring(L, 1);
-	const char *fdst = luaL_checkstring(L, 2);
-	lua_pushboolean(L, uMoveFile(fsrc, fdst));
-	return 1;
-}
-
 static int lsp_path_canonical(lua_State *L) {
 	const char *fpath = luaL_checkstring(L, 1);
 	WCHAR wbuf[1024], obuf[MAX_PATH]; char cbuf[1024];
@@ -521,39 +514,20 @@ static int lsp_utf8_len(lua_State *L) {
 	return 1;
 }
 
-static int lsp_string_encode(lua_State *L) {
+static int lsp_utf8_to_codepage(lua_State *L) {
 	const char *str = luaL_checkstring(L, 1);
-	int from = luaL_checkinteger(L, 2);
-	int to = luaL_checkinteger(L, 3);
+	unsigned cp = luaL_checkinteger(L, 2);
+	pfc::stringcvt::string_codepage_from_utf8 out = pfc::stringcvt::string_codepage_from_utf8(cp, str);
+	lua_pushlstring(L, out.get_ptr(), out.length());
+	return 1;
+}
 
-	WCHAR wbuf_fix[1024*8];
-	WCHAR *wbuf_alloc = NULL;
-	WCHAR *wbuf = wbuf_fix;
-	char cbuf_fix[1024*8];
-	char *cbuf_alloc = NULL;
-	char *cbuf = cbuf_fix;
-
-	int wsz = MultiByteToWideChar(from, 0, str, -1, NULL, 0);
-	if (wsz > sizeof(wbuf_fix)/sizeof(WCHAR) &&
-			(wbuf_alloc = (WCHAR *)malloc(sizeof(WCHAR) * wsz))) {
-		wbuf = wbuf_alloc;
-	}
-	if (wsz > 0) {
-		MultiByteToWideChar(from, 0, str, -1, wbuf, wsz);
-		int csz = WideCharToMultiByte(to, 0, wbuf, wsz, NULL, 0, NULL, false);
-		if (csz > sizeof(cbuf_fix) &&
-				(cbuf_alloc = (char *)malloc(csz))) {
-			cbuf = cbuf_alloc;
-		}
-		if (csz > 0) {
-			WideCharToMultiByte(to, 0, wbuf, wsz, cbuf, csz, NULL, false);
-			lua_pushlstring(L, cbuf, csz-1);
-			return 1;
-		}
-	}
-	if (wbuf_alloc > 0) free(wbuf_alloc);
-	if (cbuf_alloc > 0) free(cbuf_alloc);
-	return 0;
+static int lsp_codepage_to_utf8(lua_State *L) {
+	const char *str = luaL_checkstring(L, 1);
+	unsigned cp = luaL_checkinteger(L, 2);
+	pfc::stringcvt::string_utf8_from_codepage out = pfc::stringcvt::string_utf8_from_codepage(cp, str);
+	lua_pushlstring(L, out.get_ptr(), out.length());
+	return 1;
 }
 
 static const struct luaL_Reg fb_util[] = {
@@ -565,11 +539,11 @@ static const struct luaL_Reg fb_util[] = {
 	{"list_dir", lsp_list_dir},
 	{"file_stat", lsp_file_stat},
 	{"file_exists", lsp_file_exists},
-	{"move_file", lsp_move_file},
 	{"path_canonical", lsp_path_canonical},
 	{"url_encode", lsp_url_encode},
 	{"is_utf8", lsp_is_utf8},
 	{"utf8_len", lsp_utf8_len},
-	{"string_encode", lsp_string_encode},
+	{"utf8_to_codepage", lsp_utf8_to_codepage},
+	{"codepage_to_utf8", lsp_codepage_to_utf8},
 	{NULL, NULL}
 };
