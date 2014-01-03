@@ -514,6 +514,21 @@ static int lsp_utf8_len(lua_State *L) {
 	return 1;
 }
 
+static int lsp_utf8_sub(lua_State *L) {
+	const char *str = luaL_checkstring(L, 1);
+	// lua string starts at 1
+	int ib = lua_gettop(L) >= 2 ? luaL_checkinteger(L, 2) : 0;
+	int ie = lua_gettop(L) >= 3 ? luaL_checkinteger(L, 3) : 0;
+	unsigned b = ib > 1 ? pfc::skip_utf8_chars(str, ib-1) : 0;
+	if (ie > 1) {
+		unsigned e = pfc::skip_utf8_chars(str, ie-1);
+		lua_pushstring(L, pfc::string(str).subString(b, e-b+1).get_ptr());
+	}
+	else
+		lua_pushstring(L, pfc::string(str).subString(b).get_ptr());
+	return 1;
+}
+
 static int lsp_utf8_to_codepage(lua_State *L) {
 	const char *str = luaL_checkstring(L, 1);
 	unsigned cp = luaL_checkinteger(L, 2);
@@ -543,6 +558,7 @@ static const struct luaL_Reg fb_util[] = {
 	{"url_encode", lsp_url_encode},
 	{"is_utf8", lsp_is_utf8},
 	{"utf8_len", lsp_utf8_len},
+	{"utf8_sub", lsp_utf8_sub},
 	{"utf8_to_codepage", lsp_utf8_to_codepage},
 	{"codepage_to_utf8", lsp_codepage_to_utf8},
 	{NULL, NULL}
