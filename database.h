@@ -7,8 +7,8 @@ void on_items_callback(database_handle *db, const pfc::list_base_const_t<metadb_
 				"path_index, "
 				"add_date"
 			"')' VALUES '('"
-				"''$directory_path(%path%)'', "
-				"''$directory_path(%relative_path%)'', "
+				"''$directory_path(%path%)\\'', "
+				"''$directory_path(%relative_path%)\\'', "
 				"''%path_index%'', "
 				"DATETIME'('''now'', ''localtime''')'"
 			"')';"
@@ -37,7 +37,7 @@ void on_items_callback(database_handle *db, const pfc::list_base_const_t<metadb_
 				"''%tracknumber%'', "
 				"''%codec%'', "
 				"''%filename_ext%'', "
-				"'('SELECT id from `"DB_PATH_TABLE"` WHERE directory_path=''$directory_path(%path%)'' LIMIT 0,1')', "
+				"'('SELECT id from `"DB_PATH_TABLE"` WHERE directory_path=''$directory_path(%path%)\\'' LIMIT 0,1')', "
 				"%subsong%, "
 				"''%length%'', "
 				"%length_seconds%, "
@@ -47,12 +47,12 @@ void on_items_callback(database_handle *db, const pfc::list_base_const_t<metadb_
 	}
 	else if (act == ACTION_REMOVE) {
 		tpl = "DELETE FROM `"DB_TRACK_TABLE"` "
-			"WHERE pid='('SELECT id FROM `"DB_PATH_TABLE"` WHERE directory_path=''$directory_path(%path%)'' LIMIT 0,1')' "
+			"WHERE pid='('SELECT id FROM `"DB_PATH_TABLE"` WHERE directory_path=''$directory_path(%path%)\\'' LIMIT 0,1')' "
 				"AND filename_ext=''%filename_ext%'' "
 				"AND subsong=%subsong%; "
-			"DELETE FROM `"DB_PATH_TABLE"` WHERE directory_path=''$directory_path(%path%)'' "
+			"DELETE FROM `"DB_PATH_TABLE"` WHERE directory_path=''$directory_path(%path%)\\'' "
 				"AND NOT EXISTS '('SELECT  `"DB_TRACK_TABLE"`.id FROM `"DB_TRACK_TABLE"` LEFT JOIN `"DB_PATH_TABLE"` "
-					"ON pid=`"DB_PATH_TABLE"`.id WHERE directory_path=''$directory_path(%path%)'' LIMIT 0,1')';";
+					"ON pid=`"DB_PATH_TABLE"`.id WHERE directory_path=''$directory_path(%path%)\\'' LIMIT 0,1')';";
 		cmd = "remove";
 	}
 	else if (act == ACTION_MODIFY) {
@@ -68,7 +68,7 @@ void on_items_callback(database_handle *db, const pfc::list_base_const_t<metadb_
 			"`length`=''%length%'', "
 			"`length_seconds`=%length_seconds%, "
 			"`last_modified`=''%last_modified%'' "
-			"WHERE `pid`='('SELECT id FROM `"DB_PATH_TABLE"` WHERE directory_path=''$directory_path(%path%)'' LIMIT 0,1')' "
+			"WHERE `pid`='('SELECT id FROM `"DB_PATH_TABLE"` WHERE directory_path=''$directory_path(%path%)\\'' LIMIT 0,1')' "
 				"AND filename_ext=''%filename_ext%'' "
 				"AND subsong=%subsong%;";
 		cmd = "update";
@@ -117,8 +117,8 @@ void init_database() {
 	// foobar2000 trigger item add event when it startup
 	ret = g_db.exec("CREATE TABLE	`"DB_PATH_TABLE"` ("
 			"id INTEGER PRIMARY KEY, "
-			"directory_path VARCHAR(512) UNIQUE, "
-			"relative_path VARCHAR(512), "
+			"directory_path VARCHAR(512), "
+			"relative_path VARCHAR(512) UNIQUE, "
 			"path_index VARCHAR(512), "
 			"add_date DATETIME"
 		"); "

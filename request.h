@@ -56,7 +56,7 @@ static int lsp_mg_get_var(lua_State *L) {
 	return 0;
 }
 
-static void init_lua_handle(struct mg_connection *conn, void *lua_context) {
+static void init_lua_handle(struct mg_connection *conn, void *lua_context, const char *script_path) {
 	lua_State *L = (lua_State *)lua_context;
 	const struct mg_request_info *ri = mg_get_request_info(conn);
 
@@ -100,6 +100,7 @@ static void init_lua_handle(struct mg_connection *conn, void *lua_context) {
 	lua_newtable(L);
 	reg_string(L, "doc_root",
 		mg_get_option(g_init.get_static_instance().ctx, "document_root"));
+	reg_string(L, "script_path", script_path);
 	reg_string(L, "db_file_name", DB_FILE_NAME);
 	reg_string(L, "db_track_table", DB_TRACK_TABLE);
 	reg_string(L, "db_path_table", DB_PATH_TABLE);
@@ -107,7 +108,7 @@ static void init_lua_handle(struct mg_connection *conn, void *lua_context) {
 
 	// Push control functions
 	luaL_openlib(L, "fb_ctrl", fb_ctrl, 0);
-	// Push control functions
+	// Push util functions
 	luaL_openlib(L, "fb_util", fb_util, 0);
 
 	// Push stream functions
@@ -137,7 +138,7 @@ static int begin_request_handler(struct mg_connection *conn) {
 	if (!script.is_empty() &&
 		uFileExists(script) &&
 		(L = luaL_newstate()) != NULL) {
-		init_lua_handle(conn, L);
+		init_lua_handle(conn, L, script.get_ptr());
 		if (luaL_loadfile(L, pfc::stringcvt::string_ansi_from_utf8(script)) != LUA_OK ||
 			lua_pcall(L, 0, LUA_MULTRET, 0) != LUA_OK) {
 			FOO_LOG << "lua: " << lua_tostring(L, -1);

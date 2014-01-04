@@ -18,7 +18,7 @@ LUALIB_API int luaopen_cjson(lua_State *l);
 
 #define FOO_LOG console::formatter() << "foo_mg: "
 
-#define DB_FILE_NAME "mgdatabase.dat"
+#define DB_FILE_NAME "mgdatabase.db3"
 #define DB_TRACK_TABLE "fb_track"
 #define DB_PATH_TABLE "fb_path"
 
