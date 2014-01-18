@@ -464,6 +464,7 @@ static int lsp_file_stat(lua_State *L) {
 		return 0;
 	}
 	lua_newtable(L);
+	reg_string(L, "name", find->GetFileName());
 	reg_int(L, "attr", find->GetAttributes());
 	reg_int(L, "size", (int)find->GetFileSize());
 	reg_int(L, "created", (lua_Integer)FileTimeToSeconds(find->GetCreationTime()));

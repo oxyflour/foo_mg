@@ -218,3 +218,4 @@ static database_handle g_db(DB_FILE_NAME);
 
 // forward declaration
 static void reg_int(struct lua_State *L, const char *name, lua_Integer val);
+static void reg_string(struct lua_State *L, const char *name, const char *val);
