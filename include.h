@@ -26,6 +26,7 @@ LUALIB_API int luaopen_cjson(lua_State *l);
 #define MAX_OPTIONS 40
 #define MAX_CONF_FILE_LINE_SIZE (8 * 1024)
 
+#define DEFAULT_DOC_ROOT "foo_mg_www"
 #define SCRIPT_SUFFIX ".lua"
 #define HEADER_SERVER_NAME "foo_mg streamer"
 

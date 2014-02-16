@@ -6,7 +6,7 @@
 ###mongoose服务器集成
 这个插件集成了一个mongoose的轻量级http服务器，你可以在foobar2000目录下创建一个mongoose.conf的文件来配置这个服务器的主目录、端口、cgi路径等信息（具体设定请参考 [这里](https://github.com/cesanta/mongoose/blob/master/docs/UserManual.md)）
 
-如果没有配置文件，那默认端口就是8080，默认主目录是foobar2000目录下的www文件夹
+如果没有配置文件，那默认端口就是8080，默认主目录是foobar2000目录下的foo\_mg\_www文件夹
 
 ###媒体数据库同步（通过database.h）
 这个插件会尝试自动将foobar2000的媒体库导出到foobar2000目录下的mgdatabase.dat文件。这个文件实际上是一个sqlite3数据库，你可以使用任何你喜欢的工具查看、修改或者添加额外的信息。当然，你也可以使用在mongoose中运行的php脚本或其他cgi程序来访问这个数据库

@@ -64,7 +64,7 @@ void c_initquit::on_init() {
 		strcmp(options[j], "document_root"); ) j++;
 	if (j < MAX_OPTIONS - 3 && options[j] == NULL) {
 		options[j] = strdup("document_root");
-		options[j+1] = strdup("www");
+		options[j+1] = strdup(DEFAULT_DOC_ROOT);
 		options[j+2] = NULL;
 	}
 
