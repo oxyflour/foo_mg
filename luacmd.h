@@ -132,6 +132,9 @@ static void get_track_info(const char *fpath, int subsong, double seek, int wavb
 	ih.run(chunk, cb);
 
 	// guess track total bytes;
+	// ISSUE 2: fi.get_length can not report precisely length of some formats.
+	// when decoding mp3 files to wav, the guessed trackbytes are sometimes bigger than expected,
+	// and some players (like Chrome) refuse to play to the end of track because of the content-length mismatch.
 	if (wavbit > 0) {
 		trackbytes = (int)((fi.get_length() - seek) *
 			chunk.get_sample_rate() * chunk.get_channel_count() * wavbit / 8);
