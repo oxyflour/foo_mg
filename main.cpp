@@ -3,8 +3,8 @@
 #include "database.h"
 #include "request.h"
 
-DECLARE_COMPONENT_VERSION("Foobar mongoose plugin", "0.0.1",
-	"mongoose server with lua support");
+DECLARE_COMPONENT_VERSION("Foobar Mongoose Plugin", "0.0.2",
+	"This plugin allows you to browse and stream your media library via Mongoose HTTP server");
 VALIDATE_COMPONENT_FILENAME("foo_mg.dll");
 
 // Load configure file if there is one. From mongoose/main.c
