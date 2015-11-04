@@ -1,6 +1,7 @@
-﻿这是一个foobar2000的插件，因此你可能先需要一份foobar2000（[http://www.foobar2000.org/download](http://www.foobar2000.org/download)）
+﻿这是一个foobar2000的插件，因此你可能先需要一份 [foobar2000](http://www.foobar2000.org/download)）
 
-你可能同时对这个项目感兴趣（[foo\_mg\_www](https://github.com/oxyflour/foo_mg_www)）
+本项目只包含 dll 部分，lua 脚本和 html 页面在 [foo\_mg\_www](https://github.com/oxyflour/foo_mg_www)。
+完整安装包请点击[这里](https://github.com/oxyflour/foo_mg/releases/download/0.22/foo_mg_v0.22.zip)下载
 
 ##主要功能
 ###mongoose服务器集成
@@ -22,7 +23,7 @@
 
 
 ##如何安装
-这个简陋的插件暂时没有提供安装包的计划，请直接将 [foo\_mg.dll](https://github.com/oxyflour/foo_mg/blob/master/latest_build/foo_mg.dll?raw=true) 复制到foobar2000目录\components文件夹下
+下载上面的安装包，然后打开 foobar2000 菜单 File->Preference，选择左边的 Components，将下载的 zip 文件拖进右边面板，重启 foobar2000 即可
 
 
 ###这个项目的编译需要以下项目提供的库
