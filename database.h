@@ -110,12 +110,12 @@ void on_items_callback(database_handle *db, const pfc::list_base_const_t<metadb_
 		pfc::format_float((GetTickCount() - tick)/1000.0f, 0, 3) << "s)";
 }
 
-void init_database() {
+void init_database(database_handle *db) {
 	int ret;
 	char *err;
 
 	// foobar2000 trigger item add event when it startup
-	ret = g_db.exec("CREATE TABLE	`"DB_PATH_TABLE"` ("
+	ret = db->exec("CREATE TABLE	`"DB_PATH_TABLE"` ("
 			"id INTEGER PRIMARY KEY, "
 			"directory_path VARCHAR(512), "
 			"relative_path VARCHAR(512) UNIQUE, "
@@ -151,5 +151,5 @@ void init_database() {
 	pfc::list_t<metadb_handle_ptr> list;
 	lib->get_all_items(list);
 	// Add all items
-	on_items_callback(&g_db, &list, ACTION_ADD);
+	on_items_callback(db, &list, ACTION_ADD);
 }

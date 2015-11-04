@@ -18,15 +18,16 @@ LUALIB_API int luaopen_cjson(lua_State *l);
 
 #define FOO_LOG console::formatter() << "foo_mg: "
 
-#define DB_FILE_NAME "mgdatabase.db3"
+#define DB_FILE_NAME "\\user-components\\foo_mg\\mgdatabase.db3"
 #define DB_TRACK_TABLE "fb_track"
 #define DB_PATH_TABLE "fb_path"
 
 #define CONFIG_FILE "mongoose.conf"
+#define CONFIG_REFERENCE "https://github.com/cesanta/mongoose/blob/52e3be5c58bf5671d0cc010e520395bc308326b4/UserManual.md"
 #define MAX_OPTIONS 40
 #define MAX_CONF_FILE_LINE_SIZE (8 * 1024)
 
-#define DEFAULT_DOC_ROOT "user-components\\foo_mg\\www"
+#define DEFAULT_DOC_ROOT "\\user-components\\foo_mg\\www"
 #define SCRIPT_SUFFIX ".lua"
 #define HEADER_SERVER_NAME "foo_mg streamer"
 
@@ -84,17 +85,89 @@ struct WAVE_FORMAT_HEADER {
 	DWORD dwDataSize; // size of data
 };
 
-class c_initquit : public initquit {
+class database_handle {
+	sqlite3 *db_handle;
+	char *db_path;
 public:
-	// used in process storage
+	database_handle(const char *fname) {
+		db_handle = NULL;
+		db_path = strdup(fname);
+		int ret = sqlite3_open(db_path, &db_handle);
+		if (ret != SQLITE_OK || db_handle == NULL) {
+			const char *err = db_handle ? sqlite3_errmsg(db_handle) : "no msg";
+			FOO_LOG << "create or open " << db_path << " error !(err" << ret << ": " << (err ? err : "") << ")";
+			db_handle = NULL;
+		}
+	}
+	~database_handle() {
+		if (db_handle != NULL) {
+			sqlite3_close(db_handle);
+		}
+		if (db_path != NULL) {
+			free(db_path);
+		}
+	}
+	int dump(database_handle *to) {
+		sqlite3_backup *bk = sqlite3_backup_init(to->db_handle, "main", db_handle, "main");
+		if (bk) {
+			sqlite3_backup_step(bk, -1);
+			sqlite3_backup_finish(bk);
+		}
+		return sqlite3_errcode(to->db_handle);
+	}
+	int exec(const char *sql, int (*callback)(void*,int,char**,char**), void *para, char **err) {
+		if (db_handle != NULL) {
+			return sqlite3_exec(db_handle, sql, callback, para, err);
+		}
+		else {
+			if (err != NULL) {
+				const char *msg = "invalid handle";
+				t_size size = strlen(msg);
+				*err = (char *)sqlite3_malloc(size + 1);
+				memcpy(*err, msg, size + 1);
+			}
+			return SQLITE_MISUSE;
+		}
+	}
+	const char *const getPath() {
+		return db_path;
+	}
+};
+
+class c_initquit : public initquit {
 	lua_State *lua;
 	CRITICAL_SECTION cs;
 
+	database_handle *db;
 	struct mg_context *ctx;
+
 	bool started;
 
+public:
 	void on_init();
 	void on_quit();
+
+	lua_State *const acquireLua() {
+		EnterCriticalSection(&cs);
+		return lua;
+	}
+	void releaseLua() {
+		LeaveCriticalSection(&cs);
+	}
+
+	database_handle *getDb() {
+		return db;
+	}
+	bool isStarted() {
+		return started;
+	}
+
+	const char *const getDbPath() {
+		return db->getPath();
+	}
+	const char *const getDocRoot() {
+		return mg_get_option(ctx, "document_root");
+	}
 };
 static initquit_factory_t<c_initquit> g_init;
 
@@ -174,48 +247,6 @@ public :
 		p_out.add_string(p_data + j, p_data_length - j);
 	}
 };
-
-class database_handle {
-	sqlite3 *db_handle;
-public:
-	database_handle(const char *fname) {
-		db_handle = NULL;
-		int ret = sqlite3_open(fname, &db_handle);
-		if (ret != SQLITE_OK || db_handle == NULL) {
-			const char *err = db_handle ? sqlite3_errmsg(db_handle) : "no msg";
-			FOO_LOG << "create or open " << fname << " error !(err" << ret << ": " << (err ? err : "") << ")";
-			db_handle = NULL;
-		}
-	}
-	~database_handle() {
-		if (db_handle != NULL) {
-			sqlite3_close(db_handle);
-		}
-	}
-	int dump(database_handle *to) {
-		sqlite3_backup *bk = sqlite3_backup_init(to->db_handle, "main", db_handle, "main");
-		if (bk) {
-			sqlite3_backup_step(bk, -1);
-			sqlite3_backup_finish(bk);
-		}
-		return sqlite3_errcode(to->db_handle);
-	}
-	int exec(const char *sql, int (*callback)(void*,int,char**,char**), void *para, char **err) {
-		if (db_handle != NULL) {
-			return sqlite3_exec(db_handle, sql, callback, para, err);
-		}
-		else {
-			if (err != NULL) {
-				const char *msg = "invalid handle";
-				t_size size = strlen(msg);
-				*err = (char *)sqlite3_malloc(size + 1);
-				memcpy(*err, msg, size + 1);
-			}
-			return SQLITE_MISUSE;
-		}
-	};
-};
-static database_handle g_db(DB_FILE_NAME);
 
 // forward declaration
 static void reg_int(struct lua_State *L, const char *name, lua_Integer val);

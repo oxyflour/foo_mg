@@ -45,11 +45,12 @@ void c_initquit::on_init() {
 	FILE *fp;
 	char *options[MAX_OPTIONS] = { NULL };
 	struct mg_callbacks callbacks;
+	pfc::string8 profile_path = pfc::string8() << core_api::get_profile_path() + strlen("file://");
 
 	// Try loading options from CONFIG_FILE
 	fopen_s(&fp, CONFIG_FILE, "r");
 	if (fp == NULL) {
-		FOO_LOG << "no configure file found. Create "CONFIG_FILE" if you want to change mongoose settings";
+		FOO_LOG << "no configure file found. Create "CONFIG_FILE" if you want to change mongoose settings ("CONFIG_REFERENCE")";
 	}
 	else {
 		FOO_LOG << "loading "CONFIG_FILE;
@@ -64,16 +65,16 @@ void c_initquit::on_init() {
 		strcmp(options[j], "document_root"); ) j++;
 	if (j < MAX_OPTIONS - 3 && options[j] == NULL) {
 		options[j] = strdup("document_root");
-		options[j+1] = strdup(DEFAULT_DOC_ROOT);
+		options[j+1] = strdup(pfc::string8(profile_path) << DEFAULT_DOC_ROOT);
 		options[j+2] = NULL;
 	}
 
 	// Prepare callbacks structure
 	memset(&callbacks, 0, sizeof(callbacks));
 	callbacks.begin_request = begin_request_handler;
-//	callbacks.init_lua = init_lua_handle;
 	callbacks.log_message = log_message_handle;
 
+	// Prepare lua
 	lua = luaL_newstate();
 	InitializeCriticalSectionAndSpinCount(&cs, 0x100);
 	// Start the web server
@@ -91,15 +92,20 @@ void c_initquit::on_init() {
 		free(options[i]);
 	}
 
-	if (g_db.exec("SELECT * from `"DB_TRACK_TABLE"` LIMIT 0,1", 0, NULL, NULL) != SQLITE_OK) {
-		init_database();
+	// Prepare database
+	db = new database_handle(pfc::string8(profile_path) << DB_FILE_NAME);
+	if (db->exec("SELECT * from `"DB_TRACK_TABLE"` LIMIT 0,1", 0, NULL, NULL) != SQLITE_OK) {
+		init_database(db);
 	}
 
 	started = true;
 }
 
 void c_initquit::on_quit() {
-	// Stop the web server.
+	if (db != NULL) {
+		delete db;
+	}
+
 	if (ctx != NULL) {
 		mg_stop(ctx);
 	}
@@ -114,19 +120,20 @@ void c_initquit::on_quit() {
 }
 
 void c_library_callback::on_items_added(const pfc::list_base_const_t<metadb_handle_ptr> & p_data) {
-	if (g_init.get_static_instance().started) {
-		on_items_callback(&g_db, &p_data, ACTION_ADD);
-	}
+	c_initquit *iq = &g_init.get_static_instance();
+	if (iq->isStarted())
+		on_items_callback(iq->getDb(), &p_data, ACTION_ADD);
 }
 
 void c_library_callback::on_items_removed(const pfc::list_base_const_t<metadb_handle_ptr> & p_data) {
 	// i don't want to lose my data (item add time and id) after foobar2000 shutdown,
 	// so only remove them when startup
-	if (g_init.get_static_instance().started) {
-		on_items_callback(&g_db, &p_data, ACTION_REMOVE);
-	}
+	c_initquit *iq = &g_init.get_static_instance();
+	if (iq->isStarted())
+		on_items_callback(iq->getDb(), &p_data, ACTION_REMOVE);
 }
 
 void c_library_callback::on_items_modified(const pfc::list_base_const_t<metadb_handle_ptr> & p_data) {
-	on_items_callback(&g_db, &p_data, ACTION_MODIFY);
+	c_initquit *iq = &g_init.get_static_instance();
+	on_items_callback(iq->getDb(), &p_data, ACTION_MODIFY);
 }

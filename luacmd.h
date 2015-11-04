@@ -393,30 +393,28 @@ static int lsp_exec(lua_State *L) {
 
 static int lsp_store(lua_State *L) {
 	const char *key = luaL_checkstring(L, 1);
-	c_initquit *iq = &(g_init.get_static_instance());
-	lua_State *lua = iq->lua;
-	CRITICAL_SECTION *cs = &(iq->cs);
-	if (lua != NULL) {
-		if (lua_gettop(L) >= 2) {
-			const char *val = luaL_checkstring(L, 2);
-			EnterCriticalSection(cs);
+	c_initquit *iq = &g_init.get_static_instance();
+	if (lua_gettop(L) >= 2) {
+		const char *val = luaL_checkstring(L, 2);
+		if (lua_State *lua = iq->acquireLua()) {
 			lua_pushstring(lua, val);
 			lua_setglobal(lua, key);
-			LeaveCriticalSection(cs);
+			iq->releaseLua();
 		}
-		else {
-			const char *val = NULL;
-			EnterCriticalSection(cs);
+	}
+	else {
+		const char *val = NULL;
+		if (lua_State *lua = iq->acquireLua()) {
 			lua_getglobal(lua, key);
 			if (lua_isstring(lua, -1) &&
 					(val = lua_tostring(lua, -1))) {
 				lua_pushstring(L, val);
 			}
 			lua_pop(lua, 1);
-			LeaveCriticalSection(cs);
-			if (val != NULL)
-				return 1;
+			iq->releaseLua();
 		}
+		if (val != NULL)
+			return 1;
 	}
 	return 0;
 }
