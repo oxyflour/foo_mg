@@ -335,7 +335,7 @@ static int lsp_stream_mp3(lua_State *L) {
 
 static int lsp_proxy_url(lua_State *L) {
 	const char *host = luaL_checkstring(L, 1);
-	int port = luaL_checkinteger(L, 2);
+	const int port = luaL_checkinteger(L, 2);
 	const char *path = luaL_checkstring(L, 3);
 
 	struct mg_connection *conn = (mg_connection *)lua_touserdata(L, lua_upvalueindex(1));
@@ -355,7 +355,8 @@ static int lsp_proxy_url(lua_State *L) {
 		mg_write(conn, szBuf, size);
 
 		for (int i = 0; i < ri->num_headers; i++) {
-			const int size = sprintf_s(szBuf, sizeof(szBuf), "%s: %s\r\n", ri->http_headers[i].name, ri->http_headers[i].value);
+			const mg_request_info::mg_header* header = ri->http_headers + i;
+			const int size = sprintf_s(szBuf, sizeof(szBuf), "%s: %s\r\n", header->name, header->value);
 			mg_write(conn, szBuf, size);
 		}
 
@@ -375,7 +376,22 @@ static int lsp_proxy_url(lua_State *L) {
 		FOO_LOG << "proxy error: " << szBuf;
 	}
 
-	return recvd;
+	lua_pushinteger(L, recvd);
+	return 1;
+}
+
+static int lsp_zip_urls(lua_State *L) {
+	// http://stackoverflow.com/questions/6137684/iterate-through-lua-table
+	// WIP
+	lua_pushnil(L);
+	while (lua_next(L, -2)) {
+		lua_pushvalue(L, -2);
+        const char *key = lua_tostring(L, -1);
+        const char *val = lua_tostring(L, -2);
+		FOO_LOG << "kv: " << key << " -> " << val;
+		lua_pop(L, 2);
+	}
+	return 0;
 }
 
 static const struct luaL_Reg fb_stream[] = {
@@ -385,6 +401,7 @@ static const struct luaL_Reg fb_stream[] = {
 	{"stream_wav", lsp_stream_wav},
 	{"stream_mp3", lsp_stream_mp3},
 	{"proxy_url", lsp_proxy_url},
+	{"zip_urls", lsp_zip_urls},
 	{NULL, NULL}
 };
 
