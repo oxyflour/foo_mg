@@ -168,6 +168,9 @@ public:
 	const char *const getDocRoot() {
 		return mg_get_option(ctx, "document_root");
 	}
+	const int getListenPort() {
+		return atoi(mg_get_option(ctx, "listening_ports"));
+	}
 };
 static initquit_factory_t<c_initquit> g_init;
 

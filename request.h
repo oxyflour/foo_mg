@@ -119,6 +119,7 @@ static void init_lua_handle(struct mg_connection *conn, void *lua_context, const
 	lua_newtable(L);
 	c_initquit &iq = g_init.get_static_instance();
 	reg_string(L, "doc_root", iq.getDocRoot());
+	reg_int(L, "listen_port", iq.getListenPort());
 	reg_string(L, "script_path", script_path);
 	reg_string(L, "db_file_name", iq.getDbPath());
 	reg_string(L, "db_track_table", DB_TRACK_TABLE);
