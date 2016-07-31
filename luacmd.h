@@ -333,12 +333,49 @@ static int lsp_stream_mp3(lua_State *L) {
 	return 1;
 }
 
-// to be finished
-static int lsp_stream_pcm(lua_State *L) {
-	const char *fpath = luaL_checkstring(L, 1);
+static int lsp_proxy_url(lua_State *L) {
+	const char *host = luaL_checkstring(L, 1);
+	int port = luaL_checkinteger(L, 2);
+	const char *path = luaL_checkstring(L, 3);
+
 	struct mg_connection *conn = (mg_connection *)lua_touserdata(L, lua_upvalueindex(1));
-	//...
-	return 0;
+
+	char szBuf[4096];
+	mg_connection* req = mg_download(host, port, 0,
+		szBuf, sizeof(szBuf),
+		"GET %s HTTP/1.0\r\n"
+		"Host: %s:%d\r\n"
+		"\r\n",
+		path, host, port);
+
+	int recvd = 0;
+	if (req != NULL) {
+		const struct mg_request_info *ri = mg_get_request_info(req);
+		int size = sprintf_s(szBuf, sizeof(szBuf), "%s %s %s\r\n", ri->request_method, ri->uri, ri->http_version);
+		mg_write(conn, szBuf, size);
+
+		for (int i = 0; i < ri->num_headers; i++) {
+			const int size = sprintf_s(szBuf, sizeof(szBuf), "%s: %s\r\n", ri->http_headers[i].name, ri->http_headers[i].value);
+			mg_write(conn, szBuf, size);
+		}
+
+		mg_write(conn, "\r\n", 2);
+
+		while ((size = mg_read(req, szBuf, sizeof(szBuf))) > 0) {
+			recvd += size;
+			if (mg_write(conn, szBuf, size) != size) {
+				size = -1;
+				break;
+			}
+		}
+		FOO_LOG << "proxy " << (size < 0 ? "error" : "ok") << ": " << recvd << "bytes proxied";
+		mg_close_connection(req);
+	}
+	else {
+		FOO_LOG << "proxy error: " << szBuf;
+	}
+
+	return recvd;
 }
 
 static const struct luaL_Reg fb_stream[] = {
@@ -347,7 +384,7 @@ static const struct luaL_Reg fb_stream[] = {
 	{"stream_file", lsp_stream_file},
 	{"stream_wav", lsp_stream_wav},
 	{"stream_mp3", lsp_stream_mp3},
-//	{"stream_pcm", lsp_stream_pcm},
+	{"proxy_url", lsp_proxy_url},
 	{NULL, NULL}
 };
 
