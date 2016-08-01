@@ -1,8 +1,16 @@
 #include <time.h>
 #include <Shlwapi.h>
 
+// http://stackoverflow.com/questions/22265610/why-ssize-t-in-visual-studio-2010-is-defined-as-unsigned
+#include <BaseTsd.h>
+
 #include "../SDK/foobar2000.h"
 #include "../helpers/input_helpers.h"
+
+namespace arv {
+	#include "../../libarchive/libarchive/archive.h"
+	#include "../../libarchive/libarchive/archive_entry.h"
+}
 
 #include "../../lame-3.99.5/include/lame.h"
 
@@ -10,10 +18,10 @@
 #include "../../mongoose-4.1/build/sqlite3.h"
 
 extern "C" {
-#include "../../mongoose-4.1/build/lua_5.2.1.h"
-LUALIB_API void (luaL_openlibs) (lua_State *L);
-LUALIB_API int luaopen_lsqlite3(lua_State *L);
-LUALIB_API int luaopen_cjson(lua_State *l);
+	#include "../../mongoose-4.1/build/lua_5.2.1.h"
+	LUALIB_API void (luaL_openlibs) (lua_State *L);
+	LUALIB_API int luaopen_lsqlite3(lua_State *L);
+	LUALIB_API int luaopen_cjson(lua_State *l);
 };
 
 #define FOO_LOG console::formatter() << "foo_mg: "

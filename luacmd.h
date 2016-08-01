@@ -132,7 +132,7 @@ static void get_track_info(const char *fpath, int subsong, double seek, int wavb
 	ih.run(chunk, cb);
 
 	// guess track total bytes;
-	if (wavbit > 0 && !fi.is_encoding_lossy()) {
+	if (wavbit > 0) {
 		trackbytes = (int)((fi.get_length() - seek) *
 			chunk.get_sample_rate() * chunk.get_channel_count() * wavbit / 8);
 		contentbytes = sizeof(WAVE_FORMAT_HEADER) + trackbytes;
@@ -377,17 +377,99 @@ static int lsp_proxy_url(lua_State *L) {
 	return 1;
 }
 
+static int get_res_content_length(mg_connection* req) {
+	int length = -1;
+	const struct mg_request_info *ri = mg_get_request_info(req);
+	for (int i = 0; i < ri->num_headers; i++) {
+		const mg_request_info::mg_header* header = ri->http_headers + i;
+		if (stricmp(header->name, "Content-length") == 0) {
+			length = atoi(header->value);
+		}
+	}
+	return length;
+}
+
+static int archive_open_cb(struct arv::archive *a, void *client_data) {
+	return ARCHIVE_OK;
+}
+
+static SSIZE_T archive_write_cb(struct arv::archive *a, void *client_data,
+	const void *buff, size_t length) {
+	mg_connection *conn = (mg_connection *)client_data;
+	return mg_write(conn, buff, length);
+}
+
+static int archive_close_cb(struct arv::archive *a, void *client_data) {
+	return ARCHIVE_OK;
+}
+
 static int lsp_zip_urls(lua_State *L) {
+	char szBuf[4096];
+	bool failed = false;
+
+	struct mg_connection *conn = (mg_connection *)lua_touserdata(L, lua_upvalueindex(1));
+	c_initquit &iq = g_init.get_static_instance();
+	const char* host = "127.0.0.1";
+	const int port = iq.getListenPort();
+
+	const char *file_name = luaL_checkstring(L, 1);
+	mg_printf(conn, "HTTP/1.0 200 OK\r\n"
+		"Content-type: application/zip\r\n"
+		"Content-Disposition: attachment; filename=\"%s\"\r\n"
+		"\r\n", file_name);
+
+	struct arv::archive* a = arv::archive_write_new();
+	arv::archive_write_set_format_zip(a);
+	arv::archive_write_open(a, conn, archive_open_cb, archive_write_cb, archive_close_cb);
+
 	// http://stackoverflow.com/questions/6137684/iterate-through-lua-table
-	// WIP
 	lua_pushnil(L);
 	while (lua_next(L, -2)) {
 		lua_pushvalue(L, -2);
-        const char *key = lua_tostring(L, -1);
-        const char *val = lua_tostring(L, -2);
-		FOO_LOG << "kv: " << key << " -> " << val;
+        const char *fname = lua_tostring(L, -1);
+        const char *path = lua_tostring(L, -2);
+
+		if (!failed) {
+			FOO_LOG << "requesting url: " << fname << " -> " << path;
+
+			mg_connection* req = mg_download(host, port, 0,
+				szBuf, sizeof(szBuf),
+				"GET %s HTTP/1.0\r\n"
+				"Host: %s:%d\r\n"
+				"\r\n",
+				path, host, port);
+
+			if (req != NULL) {
+				struct arv::archive_entry* entry = arv::archive_entry_new();
+				arv::archive_entry_set_pathname(entry, fname);
+				arv::archive_entry_set_filetype(entry, AE_IFREG);
+				arv::archive_entry_set_perm(entry, 0644);
+				arv::archive_write_header(a, entry);
+
+				int size;
+				while ((size = mg_read(req, szBuf, sizeof(szBuf))) > 0) {
+					arv::archive_write_data(a, szBuf, size);
+				}
+
+				arv::archive_write_finish_entry(a);
+				arv::archive_entry_free(entry);
+				mg_close_connection(req);
+			}
+			else {
+				FOO_LOG << "download error: " << szBuf;
+				failed = true;
+			}
+		}
+		else {
+			FOO_LOG << "ignoring url: " << fname << " -> " << path;
+		}
+
 		lua_pop(L, 2);
 	}
+
+	arv::archive_write_close(a);
+	arv::archive_write_free(a);
+
 	return 0;
 }
 
