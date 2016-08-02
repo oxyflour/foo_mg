@@ -377,18 +377,6 @@ static int lsp_proxy_url(lua_State *L) {
 	return 1;
 }
 
-static int get_res_content_length(mg_connection* req) {
-	int length = -1;
-	const struct mg_request_info *ri = mg_get_request_info(req);
-	for (int i = 0; i < ri->num_headers; i++) {
-		const mg_request_info::mg_header* header = ri->http_headers + i;
-		if (stricmp(header->name, "Content-length") == 0) {
-			length = atoi(header->value);
-		}
-	}
-	return length;
-}
-
 static int archive_open_cb(struct arv::archive *a, void *client_data) {
 	return ARCHIVE_OK;
 }
@@ -402,6 +390,38 @@ static SSIZE_T archive_write_cb(struct arv::archive *a, void *client_data,
 static int archive_close_cb(struct arv::archive *a, void *client_data) {
 	return ARCHIVE_OK;
 }
+
+static const char* mime_to_ext(const char *mime) {
+	const char* map[] = {
+		"audio/mpeg", "mp3",
+		"audio/x-mp3", "mp3",
+		"audio/wav", "wav",
+		// more to add
+		NULL,
+	};
+
+	for (int i = 0; map[i]; i += 2) {
+		if (stricmp(mime, map[i]) == 0) {
+			return map[i + 1];
+		}
+	}
+
+	return NULL;
+}
+
+static const char* get_res_ext(mg_connection* req) {
+	const struct mg_request_info *ri = mg_get_request_info(req);
+
+	for (int i = 0; i < ri->num_headers; i++) {
+		const mg_request_info::mg_header* header = ri->http_headers + i;
+		if (stricmp(header->name, "Content-type") == 0) {
+			return mime_to_ext(header->value);
+		}
+	}
+
+	return NULL;
+}
+
 
 static int lsp_zip_urls(lua_State *L) {
 	char szBuf[4096];
@@ -426,8 +446,9 @@ static int lsp_zip_urls(lua_State *L) {
 	lua_pushnil(L);
 	while (lua_next(L, -2)) {
 		lua_pushvalue(L, -2);
-        const char *fname = lua_tostring(L, -1);
-        const char *path = lua_tostring(L, -2);
+		const char *fname = lua_tostring(L, -1);
+		const char *path = lua_tostring(L, -2);
+		pfc::stringcvt::string_ansi_from_utf8 fname_ansi = pfc::stringcvt::string_ansi_from_utf8(fname);
 
 		if (!failed) {
 			FOO_LOG << "requesting url: " << fname << " -> " << path;
@@ -440,24 +461,35 @@ static int lsp_zip_urls(lua_State *L) {
 				path, host, port);
 
 			if (req != NULL) {
+				pfc::string entry_pathname = pfc::string(fname_ansi.get_ptr());
+				if (entry_pathname.endsWith(".*")) {
+					const char* file_ext = get_res_ext(req);
+					entry_pathname = entry_pathname.replace("*", file_ext);
+				}
+
 				struct arv::archive_entry* entry = arv::archive_entry_new();
-				arv::archive_entry_set_pathname(entry, fname);
+				arv::archive_entry_set_pathname(entry, entry_pathname.get_ptr());
 				arv::archive_entry_set_filetype(entry, AE_IFREG);
 				arv::archive_entry_set_perm(entry, 0644);
 				arv::archive_write_header(a, entry);
 
 				int size;
 				while ((size = mg_read(req, szBuf, sizeof(szBuf))) > 0) {
-					arv::archive_write_data(a, szBuf, size);
+					if (arv::archive_write_data(a, szBuf, size) != size) {
+						failed = true;
+						break;
+					}
 				}
 
 				arv::archive_write_finish_entry(a);
 				arv::archive_entry_free(entry);
 				mg_close_connection(req);
+
+				FOO_LOG << "download " << (failed ? "failed" : "ok");
 			}
 			else {
-				FOO_LOG << "download error: " << szBuf;
 				failed = true;
+				FOO_LOG << "download error: " << szBuf;
 			}
 		}
 		else {
