@@ -31,6 +31,8 @@
 
 
 ##如何安装
+需要先安装 [Visual C++ 2010 运行库](https://www.microsoft.com/en-us/download/details.aspx?id=5555)
+
 请下载上面的安装包，然后打开 foobar2000 的菜单 File->Preference，选择左边的 Components，
 将下载的 zip 文件拖进右边面板，重启 foobar2000 即可
 
