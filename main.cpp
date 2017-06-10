@@ -3,7 +3,7 @@
 #include "database.h"
 #include "request.h"
 
-DECLARE_COMPONENT_VERSION("Foobar Mongoose Plugin", "0.0.2",
+DECLARE_COMPONENT_VERSION("Foobar Mongoose Plugin", "0.22.2",
 	"This plugin allows you to browse and stream your media library via Mongoose HTTP server");
 VALIDATE_COMPONENT_FILENAME("foo_mg.dll");
 

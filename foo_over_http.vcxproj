@@ -75,6 +75,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;FOO_OVER_HTTP_EXPORTS;USE_LUA;USE_LUA_SQLITE3;LUA_COMPAT_ALL;LIBARCHIVE_STATIC;ZLIB_WINAPI;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -85,8 +86,8 @@
       <IgnoreSpecificDefaultLibraries>LIBCMT;LIBCMTD;MSVCRTD</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "G:\Share\foobar2000\components\"
-copy "$(TargetPath)" "$(ProjectDir)latest_build\"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
